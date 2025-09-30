@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>SASCO PALM 🌴 — Simple Manager</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root{
+    --brand:#0b5ed7;
+    --accent:#198754;
+    --danger:#dc3545;
+    --bg:#f4f7fb;
+    --muted:#6c757d;
+    --warning:#ffc107;
+    --success:#28a745;
+    --sale:#ffc107;
+    --confirm:#28a745;
+    --void:#dc3545;
+  }
+  *{box-sizing:border-box}
+  body{font-family:Inter,Arial,Helvetica,sans-serif;background:var(--bg);margin:0;padding:18px;line-height:1.2}
+  .wrap{max-width:1100px;margin:0 auto;background:#fff;padding:18px;border-radius:12px;box-shadow:0 10px 30px rgba(2,6,23,0.07)}
+  header{display:flex;align-items:center;gap:12px}
+  header .logo{font-size:36px}
+  header h1{font-size:30px;color:var(--brand);margin:0}
+  #notification{display:none;padding:12px;border-radius:8px;margin-top:12px;font-weight:700;text-align:center}
+  .top{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:14px;flex-wrap:wrap}
+  .panel{background:#fbfdff;border-radius:10px;padding:12px;border:1px solid #eef6ff;min-width:260px}
+  select,input,button{font-size:18px;padding:10px;border-radius:8px;border:1px solid #d6e6fb}
+  button{cursor:pointer}
+  .btn-primary{background:var(--brand);color:#fff;border:none;padding:12px 14px;border-radius:8px;font-weight:700}
+  .btn-secondary{background:#6c757d;color:#fff;border:none;padding:10px 12px;border-radius:8px}
+  .btn-danger{background:var(--danger);color:#fff;border:none;padding:10px 12px;border-radius:8px}
+  .btn-warning{background:var(--warning);color:#000;border:none;padding:10px 12px;border-radius:8px}
+  .btn-sale{background:var(--sale);color:#000;border:none;padding:10px 12px;border-radius:8px;font-weight:700}
+  .btn-confirm{background:var(--confirm);color:#fff;border:none;padding:10px 12px;border-radius:8px;font-weight:700}
+  .btn-void{background:var(--void);color:#fff;border:none;padding:10px 12px;border-radius:8px;font-weight:700}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:14px}
+  .tile{background:#fff;border-radius:10px;padding:14px;border:1px solid #eef6ff;text-align:center}
+  .tile .label{font-size:13px;color:var(--muted)}
+  .tile .value{font-size:40px;font-weight:800;color:#111;margin-top:8px}
+  .controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-top:14px}
+  .control{background:#fbfdff;padding:12px;border-radius:10px;border:1px solid #eef6ff}
+  .control label{display:block;font-size:14px;color:var(--muted);margin-bottom:8px}
+  .big-input{font-size:20px;padding:12px;border-radius:8px;border:1px solid #d6e6fb;width:100%}
+  .history{margin-top:18px}
+  .filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+  .history-list{max-height:320px;overflow:auto;border:1px solid #eef6ff;border-radius:8px;padding:8px;background:#fff}
+  .history-entry{padding:8px;border-bottom:1px solid #f1f5fa;font-size:15px}
+  .small{font-size:13px;color:var(--muted)}
+  footer{margin-top:16px;text-align:center;color:var(--muted);font-size:13px}
+  .loginCard{max-width:420px;margin:70px auto;padding:20px;border-radius:12px;background:#fff;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.08)}
+  
+  /* NEW STYLES FOR ENHANCED FEATURES */
+  .remaining-low { color: #dc3545; background-color: #ffe6e6; padding: 4px 8px; border-radius: 4px; }
+  .remaining-medium { color: #ffc107; background-color: #fff9e6; padding: 4px 8px; border-radius: 4px; }
+  .remaining-high { color: #28a745; background-color: #e6ffe6; padding: 4px 8px; border-radius: 4px; }
+  
+  .menu-status { 
+    display: flex; 
+    gap: 10px; 
+    margin-top: 10px; 
+    flex-wrap: wrap; 
+    justify-content: center;
+  }
+  .status-item {
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  
+  @media (max-width:700px){ 
+    header h1{font-size:22px} 
+    .tile .value{font-size:32px} 
+    select,input,button{font-size:16px} 
+    .menu-status { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<!-- STARTUP: Master PIN prompt -->
+<div id="loginContainer" class="loginCard">
+  <div style="font-size:28px;color:var(--brand)">🌴 SASCO PALM</div>
+  <p style="margin:8px 0 16px 0">Enter Master PIN to open the app</p>
+  <input id="masterPinInput" type="password" placeholder="Master PIN" style="font-size:18px;padding:10px;width:80%;margin-bottom:10px" />
+  <div>
+    <button class="btn-primary" onclick="handleMasterLogin()">Open</button>
+    <button class="btn-secondary" onclick="changeMasterPinPrompt()" style="margin-left:8px">Change Master PIN</button>
+  </div>
+  <p class="small" style="margin-top:12px;color:var(--muted)">Default Master PIN: <b>1761</b></p>
+</div>
+
+<!-- MAIN APP (hidden until login succeeds) -->
+<div class="wrap" id="appWrap" style="display:none">
+  <header>
+    <div class="logo">🌴</div>
+    <h1>SASCO PALM — Simple Manager</h1>
+    <div style="margin-left:auto">
+      <!-- removed Load Sample & Reset (per request) -->
+      <div class="small" style="color:var(--muted)">Master PIN protected — change at top on login screen</div>
+    </div>
+  </header>
+
+  <div id="notification"></div>
+
+  <div class="top">
+    <div class="panel">
+      <div style="font-size:13px;color:var(--muted)">Current Action PIN (used for add/remove/sale/confirm)</div>
+      <div style="font-weight:800;font-size:18px" id="pinDisplay">******</div>
+      <div style="margin-top:8px"><button class="btn-primary" onclick="changePIN()">Change Action PIN</button></div>
+      <div class="small" style="margin-top:8px">Every action will prompt for Action PIN to proceed.</div>
+    </div>
+
+    <div class="panel">
+      <div style="font-size:13px;color:var(--muted)">Quick Menu</div>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <button class="btn-primary" onclick="openAdd()">Add Quantity</button>
+        <button class="btn-primary" onclick="openRemove()">Remove</button>
+        <button class="btn-sale" onclick="openSale()">Record Sale</button>
+        <button class="btn-confirm" onclick="openConfirm()">Confirm Sale</button>
+        <button class="btn-void" onclick="voidSalePrompt()">Void Sale</button>
+        <button class="btn-secondary" onclick="printSummary()">Print</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- product selector -->
+  <div style="margin-top:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <label style="font-weight:700">Product</label>
+    <select id="productSelect" style="font-size:18px;padding:10px;border-radius:8px;" onchange="productChanged()"></select>
+    <button class="btn-primary" onclick="createItemPrompt()">➕ Create Item</button>
+    <button class="btn-danger" onclick="deleteProductPrompt()">🗑️ Delete Product</button>
+  </div>
+
+  <!-- NEW: Dynamic Menu Status -->
+  <div class="menu-status" id="menuStatus">
+    <!-- This will be populated dynamically when product changes -->
+  </div>
+
+  <!-- tiles -->
+  <div class="tiles" id="tilesRow">
+    <div class="tile"><div class="label">TOTAL</div><div id="vTotal" class="value">0</div></div>
+    <div class="tile"><div class="label">SOLD TODAY (unconfirmed)</div><div id="vSold" class="value">0</div></div>
+    <div class="tile"><div class="label">CONFIRMED</div><div id="vConfirmed" class="value">0</div></div>
+    <div class="tile"><div class="label">REMAINING</div><div id="vRemaining" class="value">0</div></div>
+  </div>
+
+  <!-- controls -->
+  <div class="controls">
+    <div class="control" id="addPanel">
+      <label>Add Quantity (supplier) — also use Create Item</label>
+      <input id="addQty" class="big-input" type="number" placeholder="Enter quantity to add" />
+      <div style="margin-top:8px"><button class="btn-primary" onclick="doAdd()">Add (asks PIN)</button></div>
+    </div>
+
+    <div class="control" id="removePanel">
+      <label>Remove Quantity</label>
+      <input id="removeQty" class="big-input" type="number" placeholder="Enter quantity to remove" />
+      <div style="margin-top:8px"><button class="btn-primary" onclick="doRemove()">Remove (asks PIN)</button></div>
+    </div>
+
+    <div class="control" id="salePanel">
+      <label>Record Sale (unconfirmed)</label>
+      <input id="saleQty" class="big-input" type="number" placeholder="Enter sale qty (overwrites same person)" />
+      <div style="margin-top:8px">
+        <select id="saleBy" style="font-size:18px;padding:8px;border-radius:8px">
+          <option value="Store Incharge">Store Incharge</option>
+          <option value="Cashier">Cashier</option>
+        </select>
+        <button class="btn-sale" style="margin-left:8px" onclick="doSale()">Record Sale (asks PIN)</button>
+      </div>
+      <div class="small" style="margin-top:8px">Sales are temporary until Confirm — Remaining updates immediately.</div>
+    </div>
+
+    <div class="control" id="confirmPanel">
+      <label>Confirm Today's Sale (move unconfirmed → confirmed)</label>
+      <div style="margin-top:8px"><button class="btn-confirm" onclick="doConfirm()">Confirm Selected Product (asks PIN)</button></div>
+    </div>
+  </div>
+
+  <!-- history -->
+  <div class="history">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><h3 style="margin:8px 0;color:var(--brand)">History</h3></div>
+      <div>
+        <button class="btn-danger" onclick="deleteHistoryPrompt()">Delete History (by product)</button>
+      </div>
+    </div>
+
+    <div class="filter-row">
+      <label>Filter</label>
+      <select id="filterType" style="padding:8px" onchange="filterTypeChanged()">
+        <option value="all">All</option>
+        <option value="date">By Date (calendar)</option>
+        <option value="product">By Product</option>
+        <option value="person">By Person</option>
+      </select>
+      <input id="filterValue" placeholder="Filter value" style="padding:8px;min-width:200px" />
+      <input id="filterDate" type="date" style="padding:8px;display:none" />
+      <button class="btn-primary" onclick="applyFilter()">Apply</button>
+      <button class="btn-secondary" onclick="clearFilter()">Clear</button>
+    </div>
+
+    <div id="historyList" class="history-list"></div>
+  </div>
+
+  <footer>Made by NASRULLAH — SASCO PALM 🌴🥥</footer>
+</div>
+
+<script>
+/* -------------- STORAGE KEYS & DEFAULT PINS -------------- */
+const STORAGE_KEY = "sasco_simple_v3";
+const MASTER_PIN_KEY = "sasco_master_pin";    // master PIN key
+const ACTION_PIN_KEY = "sasco_action_pin";    // action PIN key
+
+const DEFAULT_MASTER_PIN = "1761";
+const DEFAULT_ACTION_PIN = "1234";
+const RESET_PIN = "1122"; // kept but Reset UI removed per your request (unused now)
+
+/* -------------- APP STATE -------------- */
+let masterPin = localStorage.getItem(MASTER_PIN_KEY) || DEFAULT_MASTER_PIN;
+let PIN = localStorage.getItem(ACTION_PIN_KEY) || DEFAULT_ACTION_PIN;
+
+/* data structures */
+let products = [];
+let totalQty = [];
+let confirmed = [];
+// per-person unconfirmed sales per product index:
+let perPersonSales = []; // array of objects, e.g. [{Store Incharge:0, Cashier:0}, ...]
+let history = []; // logs {date, person, product, action, qty, approved}
+
+/* UI refs */
+const loginContainer = document.getElementById("loginContainer");
+const appWrap = document.getElementById("appWrap");
+const productSelect = document.getElementById("productSelect");
+const vTotal = document.getElementById("vTotal");
+const vSold = document.getElementById("vSold");
+const vConfirmed = document.getElementById("vConfirmed");
+const vRemaining = document.getElementById("vRemaining");
+const notification = document.getElementById("notification");
+const menuStatus = document.getElementById("menuStatus");
+
+/* -------------- UTILITIES -------------- */
+function nowStr(){ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); }
+function dateOnly(dstr){ return dstr.split(" ")[0]; } // for date filtering
+
+function showNotif(msg, type="info"){
+  notification.style.display = "block";
+  notification.style.background = (type==="error") ? "#ffd6d6" : (type==="success") ? "#dff5e6" : "#fff3bf";
+  notification.style.color = (type==="error") ? "#7a1f1f" : (type==="success") ? "#0a7040" : "#725b00";
+  notification.innerText = msg;
+  setTimeout(()=>{ notification.style.display = "none"; }, 3000);
+}
+
+/* -------------- PERSISTENCE -------------- */
+function saveAll(){
+  const payload = { products, totalQty, confirmed, perPersonSales, history };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+  localStorage.setItem(MASTER_PIN_KEY, masterPin);
+  localStorage.setItem(ACTION_PIN_KEY, PIN);
+}
+function loadAll(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(raw){
+    try{
+      const obj = JSON.parse(raw);
+      products = obj.products || [];
+      totalQty = obj.totalQty || [];
+      confirmed = obj.confirmed || [];
+      perPersonSales = obj.perPersonSales || [];
+      history = obj.history || [];
+    }catch(e){
+      console.error("parse error",e);
+    }
+  }
+  if(!products.length){
+    products = ["Ice Rush 10gm","Seaside","Ice Rush 7gm"];
+    totalQty = [0,0,0];
+    confirmed = [0,0,0];
+    perPersonSales = products.map(()=>({ "Store Incharge":0, "Cashier":0 }));
+    history = [];
+    saveAll();
+  } else {
+    // ensure perPersonSales length matches products
+    while(perPersonSales.length < products.length) perPersonSales.push({ "Store Incharge":0, "Cashier":0 });
+  }
+}
+
+/* -------------- MASTER LOGIN & CHANGE -------------- */
+function handleMasterLogin(){
+  const entry = document.getElementById("masterPinInput").value;
+  if(entry === masterPin){
+    // show app
+    loginContainer.style.display = "none";
+    appWrap.style.display = "block";
+    document.getElementById("pinDisplay").innerText = "PIN: " + "*".repeat(4);
+    renderProductOptions(); renderTiles(); renderHistory();
+    updateMenuStatus(); // NEW: Initialize menu status
+    showNotif("Welcome — App unlocked", "success");
+  } else {
+    showNotif("Wrong Master PIN", "error");
+  }
+}
+function changeMasterPinPrompt(){
+  const current = prompt("Enter current Master PIN:");
+  if(current === null) return;
+  if(current !== masterPin){ alert("Wrong master PIN"); return; }
+  const np = prompt("Enter new Master PIN (min 4 digits):");
+  if(!np || np.length < 4){ alert("Invalid new PIN"); return; }
+  masterPin = np;
+  localStorage.setItem(MASTER_PIN_KEY, masterPin);
+  alert("Master PIN updated");
+}
+
+/* -------------- RENDER -------------- */
+function populateProducts(){
+  productSelect.innerHTML = "";
+  products.forEach((p,i)=>{
+    const opt = document.createElement("option");
+    opt.value = i; opt.textContent = p;
+    productSelect.appendChild(opt);
+  });
+}
+
+// NEW: Update menu status when product changes
+function updateMenuStatus() {
+  const idx = parseInt(productSelect.value || 0, 10);
+  const t = totalQty[idx] || 0;
+  const unconfirmedSum = (perPersonSales[idx] ? ((perPersonSales[idx]["Store Incharge"]||0) + (perPersonSales[idx]["Cashier"]||0)) : 0);
+  const c = confirmed[idx] || 0;
+  const rem = Math.max(t - c - unconfirmedSum, 0);
+  
+  // Determine remaining quantity color class
+  let remainingClass = "remaining-high";
+  if (rem < 10) {
+    remainingClass = "remaining-low";
+  } else if (rem < 25) {
+    remainingClass = "remaining-medium";
+  }
+  
+  // Update the remaining value with color
+  vRemaining.className = "value " + remainingClass;
+  
+  // Update menu status display
+  menuStatus.innerHTML = `
+    <div class="status-item" style="background-color: #e6f3ff; color: #0b5ed7;">Total: ${t}</div>
+    <div class="status-item" style="background-color: #fff9e6; color: #ffc107;">Unconfirmed: ${unconfirmedSum}</div>
+    <div class="status-item" style="background-color: #e6ffe6; color: #28a745;">Confirmed: ${c}</div>
+    <div class="status-item ${remainingClass}">Remaining: ${rem}</div>
+  `;
+}
+
+function renderTiles(){
+  const idx = parseInt(productSelect.value || 0, 10);
+  const t = totalQty[idx] || 0;
+  // unconfirmed sold sum for this product:
+  const unconfirmedSum = (perPersonSales[idx] ? ( (perPersonSales[idx]["Store Incharge"]||0) + (perPersonSales[idx]["Cashier"]||0) ) : 0);
+  const c = confirmed[idx] || 0;
+  const rem = Math.max(t - c - unconfirmedSum, 0);
+  vTotal.innerText = t;
+  vSold.innerText = unconfirmedSum;
+  vConfirmed.innerText = c;
+  vRemaining.innerText = rem;
+  
+  // NEW: Update menu status
+  updateMenuStatus();
+  
+  renderDaySummary();
+}
+
+function renderDaySummary(){
+  let ds = document.getElementById("daySummaryBox");
+  if(!ds){
+    ds = document.createElement("div"); ds.id = "daySummaryBox"; ds.style.marginTop="12px";
+    ds.style.padding="10px"; ds.style.border="1px solid #eef6ff"; ds.style.borderRadius="8px";
+    const parent = document.querySelector(".wrap");
+    parent.insertBefore(ds, document.querySelector(".history"));
+  }
+  let html = "";
+  products.forEach((p,i)=>{
+    const unconfirmed = perPersonSales[i] ? ((perPersonSales[i]["Store Incharge"]||0)+(perPersonSales[i]["Cashier"]||0)) : 0;
+    html += `<div style="margin-bottom:8px"><b>${p}</b>: Total ${totalQty[i]||0} | Unconfirmed ${unconfirmed} | Confirmed ${confirmed[i]||0} | Remaining ${Math.max((totalQty[i]||0)-(confirmed[i]||0)-unconfirmed,0)}</div>`;
+  });
+  ds.innerHTML = html;
+}
+
+function renderHistory(filterFunc=null){
+  const list = document.getElementById("historyList");
+  list.innerHTML = "";
+  let entries = filterFunc ? history.filter(filterFunc) : history;
+  if(!entries.length){
+    list.innerHTML = "<div style='padding:12px;color:var(--muted)'>No records.</div>";
+    return;
+  }
+  entries.slice().reverse().forEach(h=>{
+    const div = document.createElement("div");
+    div.className = "history-entry";
+    const approvedBadge = h.approved ? " ✅" : "";
+    div.innerHTML = `<b>[${h.date}]</b> <span style="color:var(--brand)">${h.person}</span> - <span style="color:#198754">${h.action}</span> <b>${h.qty}</b> on <span style="color:#dc3545">${h.product}</span> ${approvedBadge}`;
+    list.appendChild(div);
+  });
+}
+
+/* -------------- LOG helpers -------------- */
+function pushHistory(person, action, qty, product, approved){
+  history.push({ date: nowStr(), person, action, qty, product, approved: !!approved });
+  saveAll();
+}
+
+/* -------------- NEW: Product change handler -------------- */
+function productChanged() {
+  renderTiles();
+  updateMenuStatus();
+}
+
+/* -------------- ACTIONS (Add/Remove/Sale/Confirm) -------------- */
+function askActionPIN(){
+  const entry = prompt("Enter Action PIN:");
+  if(entry === null) return null;
+  if(entry !== PIN){ showNotif("Invalid Action PIN", "error"); return false; }
+  return true;
+}
+
+/* Add quantity (supplier) */
+function doAdd(){
+  const val = parseInt(document.getElementById("addQty").value,10);
+  if(isNaN(val) || val<=0){ alert("Enter positive number"); return; }
+  const idx = parseInt(productSelect.value || 0,10);
+  const ok = askActionPIN(); if(ok === null) return; if(ok === false) return;
+  totalQty[idx] = (totalQty[idx]||0) + val;
+  pushHistory("Operator","Add Quantity", val, products[idx], true);
+  saveAll(); renderTiles(); renderHistory();
+  document.getElementById("addQty").value = "";
+  showNotif("Added "+val+" to "+products[idx],"success");
+}
+
+/* Remove quantity */
+function doRemove(){
+  const val = parseInt(document.getElementById("removeQty").value,10);
+  if(isNaN(val) || val<=0){ alert("Enter positive number"); return; }
+  const idx = parseInt(productSelect.value || 0,10);
+  // remaining that can be removed = total - confirmed - unconfirmed
+  const unconfirmed = perPersonSales[idx] ? ((perPersonSales[idx]["Store Incharge"]||0)+(perPersonSales[idx]["Cashier"]||0)) : 0;
+  const maxRem = Math.max((totalQty[idx]||0) - (confirmed[idx]||0) - unconfirmed, 0);
+  if(val > maxRem){ alert("Cannot remove more than remaining ("+maxRem+")"); return; }
+  const ok = askActionPIN(); if(ok === null) return; if(ok === false) return;
+  totalQty[idx] = Math.max((totalQty[idx]||0) - val, 0);
+  pushHistory("Operator","Remove Quantity", val, products[idx], true);
+  saveAll(); renderTiles(); renderHistory();
+  document.getElementById("removeQty").value = "";
+  showNotif("Removed "+val+" from "+products[idx],"success");
+}
+
+/* Record Sale (unconfirmed): overwrite per-person sale for product.
+   When a different person records sale for same product, we log the previous person's unlogged sale into history.
+   The new person's sale becomes the active unlogged sale (not logged yet).
+*/
+function doSale(){
+  const val = parseInt(document.getElementById("saleQty").value,10);
+  if(isNaN(val) || val<=0){ alert("Enter positive number"); return; }
+  const person = document.getElementById("saleBy").value || "Cashier";
+  const idx = parseInt(productSelect.value || 0,10);
+  const unconfirmed = perPersonSales[idx] ? ((perPersonSales[idx]["Store Incharge"]||0)+(perPersonSales[idx]["Cashier"]||0)) : 0;
+  const remainingNow = Math.max((totalQty[idx]||0) - (confirmed[idx]||0) - unconfirmed,0);
+  if(val > remainingNow){ alert("Not enough remaining: "+remainingNow); return; }
+  const ok = askActionPIN(); if(ok === null) return; if(ok === false) return;
+
+  // if other person had an unlogged sale, log it now to history before overwriting
+  const otherPerson = (person === "Store Incharge") ? "Cashier" : "Store Incharge";
+  if(perPersonSales[idx] && (perPersonSales[idx][otherPerson]||0) > 0){
+    // log other person's unconfirmed sale to history (as unapproved yet) because person changed
+    pushHistory(otherPerson, "Record Sale (temp)", perPersonSales[idx][otherPerson], products[idx], false);
+    // mark it preserved in history but not approved; it was unconfirmed earlier
+    // Note: we DO NOT reduce totalQty — total remains; remaining already reflected via unconfirmed sums
+  }
+
+  // set this person's unconfirmed sale (overwrite)
+  if(!perPersonSales[idx]) perPersonSales[idx] = { "Store Incharge":0, "Cashier":0 };
+  perPersonSales[idx][person] = val;
+
+  // update display (soldToday = sum of unconfirmed)
+  saveAll(); renderTiles(); renderHistory();
+  document.getElementById("saleQty").value = "";
+  showNotif(`Recorded unconfirmed sale ${val} by ${person} on ${products[idx]}`,"success");
+}
+
+/* Confirm: mark all current perPersonSales for selected product as approved, move sum to confirmed, clear perPersonSales for that product */
+function doConfirm(){
+  const idx = parseInt(productSelect.value || 0,10);
+  const ok = askActionPIN(); if(ok === null) return; if(ok === false) return;
+  const pSales = perPersonSales[idx] || { "Store Incharge":0, "Cashier":0 };
+  const moved = (pSales["Store Incharge"]||0) + (pSales["Cashier"]||0);
+  if(moved === 0){ showNotif("Nothing to confirm for this product", "error"); return; }
+  // log each person's current unconfirmed sale as approved entry
+  if(pSales["Store Incharge"] && pSales["Store Incharge"] > 0){
+    pushHistory("Store Incharge", "Record Sale", pSales["Store Incharge"], products[idx], true);
+  }
+  if(pSales["Cashier"] && pSales["Cashier"] > 0){
+    pushHistory("Cashier", "Record Sale", pSales["Cashier"], products[idx], true);
+  }
+  // move to confirmed
+  confirmed[idx] = (confirmed[idx]||0) + moved;
+  // clear perPersonSales for this product
+  perPersonSales[idx] = { "Store Incharge":0, "Cashier":0 };
+  // also push a confirm summary
+  pushHistory("Operator", "Confirm Sales", moved, products[idx], true);
+  saveAll(); renderTiles(); renderHistory();
+  showNotif(`Confirmed sales moved: ${moved} for ${products[idx]}`, "success");
+}
+
+/* -------------- NEW FEATURE 1: VOID SALE -------------- */
+function voidSalePrompt(){
+  const idx = parseInt(productSelect.value || 0,10);
+  const pSales = perPersonSales[idx] || { "Store Incharge":0, "Cashier":0 };
+  const storeInchargeSale = pSales["Store Incharge"] || 0;
+  const cashierSale = pSales["Cashier"] || 0;
+  
+  if(storeInchargeSale === 0 && cashierSale === 0){
+    showNotif("No unconfirmed sales to void for this product", "error");
+    return;
+  }
+  
+  let message = "Select which unconfirmed sale to void:\n\n";
+  if(storeInchargeSale > 0) message += `1. Store Incharge: ${storeInchargeSale} items\n`;
+  if(cashierSale > 0) message += `2. Cashier: ${cashierSale} items\n`;
+  message += "\nEnter 1 or 2:";
+  
+  const choice = prompt(message);
+  if(choice === null) return;
+  
+  let personToVoid = null;
+  if(choice === "1" && storeInchargeSale > 0) personToVoid = "Store Incharge";
+  else if(choice === "2" && cashierSale > 0) personToVoid = "Cashier";
+  else {
+    alert("Invalid selection");
+    return;
+  }
+  
+  const ok = askActionPIN(); if(ok === null) return; if(ok === false) return;
+  
+  // Void the selected sale
+  const voidedQty = perPersonSales[idx][personToVoid];
+  perPersonSales[idx][personToVoid] = 0;
+  
+  pushHistory("Operator", "Void Sale", voidedQty, products[idx], true);
+  saveAll(); renderTiles(); renderHistory();
+  showNotif(`Voided ${voidedQty} items from ${personToVoid} for ${products[idx]}`, "success");
+}
+
+/* -------------- NEW FEATURE 2: DELETE HISTORY BY PRODUCT -------------- */
+function deleteHistoryPrompt(){
+  const idx = parseInt(productSelect.value || 0,10);
+  const productName = products[idx];
+  
+  // Count history entries for this product
+  const productHistoryCount = history.filter(h => h.product === productName).length;
+  
+  if(productHistoryCount === 0){
+    showNotif(`No history entries found for ${productName}`, "error");
+    return;
+  }
+  
+  const confirmMsg = `This will delete ALL ${productHistoryCount} history entries for "${productName}".\nThis action cannot be undone.\n\nEnter Action PIN to confirm:`;
+  const pin = prompt(confirmMsg);
+  if(pin === null) return;
+  
+  if(pin !== PIN){
+    showNotif("Invalid Action PIN", "error");
+    return;
+  }
+  
+  // Delete all history entries for this product
+  history = history.filter(h => h.product !== productName);
+  
+  pushHistory("Operator", "Delete History", productHistoryCount, productName, true);
+  saveAll(); renderHistory();
+  showNotif(`Deleted ${productHistoryCount} history entries for ${productName}`, "success");
+}
+
+/* -------------- NEW FEATURE 3: DELETE PRODUCT -------------- */
+function deleteProductPrompt(){
+  const idx = parseInt(productSelect.value || 0,10);
+  const productName = products[idx];
+  
+  if(products.length <= 1){
+    showNotif("Cannot delete the only product. Create another product first.", "error");
+    return;
+  }
+  
+  const confirmMsg = `This will PERMANENTLY DELETE the product "${productName}" and ALL its data (quantity, sales, history).\nThis action cannot be undone.\n\nEnter Action PIN to confirm:`;
+  const pin = prompt(confirmMsg);
+  if(pin === null) return;
+  
+  if(pin !== PIN){
+    showNotif("Invalid Action PIN", "error");
+    return;
+  }
+  
+  // Remove product and all associated data
+  products.splice(idx, 1);
+  totalQty.splice(idx, 1);
+  confirmed.splice(idx, 1);
+  perPersonSales.splice(idx, 1);
+  
+  // Also remove all history entries for this product
+  history = history.filter(h => h.product !== productName);
+  
+  pushHistory("Operator", "Delete Product", "-", productName, true);
+  saveAll(); populateProducts(); renderTiles(); renderHistory();
+  showNotif(`Deleted product: ${productName}`, "success");
+}
+
+/* -------------- Create item & PIN change -------------- */
+function createItemPrompt(){
+  const name = prompt("Enter new product name:");
+  if(!name) return;
+  if(products.includes(name)){ showNotif("Product already exists", "error"); return; }
+  products.push(name);
+  totalQty.push(0); confirmed.push(0); perPersonSales.push({ "Store Incharge":0, "Cashier":0 });
+  pushHistory("Operator", "Create Item", "-", name, true);
+  saveAll(); populateProducts(); renderTiles(); renderHistory();
+  showNotif("Created item: " + name, "success");
+}
+
+function changePIN(){
+  const oldPin = prompt("Enter current Action PIN:");
+  if(oldPin === null) return;
+  if(oldPin !== PIN){ alert("Wrong current PIN"); return; }
+  const newPin = prompt("Enter new 4-digit Action PIN:");
+  if(!/^\d{4}$/.test(newPin)){ alert("PIN must be 4 digits"); return; }
+  PIN = newPin;
+  localStorage.setItem(ACTION_PIN_KEY, PIN);
+  showNotif("Action PIN changed", "success");
+}
+
+/* -------------- FILTER UI & FUNCTIONS -------------- */
+function filterTypeChanged(){
+  const type = document.getElementById("filterType").value;
+  const valInput = document.getElementById("filterValue");
+  const dateInput = document.getElementById("filterDate");
+  valInput.style.display = (type === "product" || type === "person") ? "inline-block" : "none";
+  dateInput.style.display = (type === "date") ? "inline-block" : "none";
+  if(type === "all"){ valInput.style.display = "none"; dateInput.style.display = "none"; }
+}
+function applyFilter(){
+  const type = document.getElementById("filterType").value;
+  if(type === "all"){ renderHistory(); return; }
+  if(type === "date"){
+    const d = document.getElementById("filterDate").value;
+    if(!d){ alert("Choose a date"); return; }
+    renderHistory(h => dateOnly(h.date) === d);
+  } else if(type === "product"){
+    const val = document.getElementById("filterValue").value.trim().toLowerCase();
+    if(!val){ alert("Enter product name"); return; }
+    renderHistory(h => h.product.toLowerCase() === val);
+  } else if(type === "person"){
+    const val = document.getElementById("filterValue").value.trim().toLowerCase();
+    if(!val){ alert("Enter person name"); return; }
+    renderHistory(h => h.person.toLowerCase() === val);
+  }
+}
+function clearFilter(){ document.getElementById("filterType").value="all"; document.getElementById("filterValue").value=""; document.getElementById("filterDate").value=""; filterTypeChanged(); renderHistory(); }
+
+/* -------------- Print Summary -------------- */
+function printSummary(){
+  const w = window.open("", "_blank");
+  let html = `<html><head><title>SASCO PALM - Summary</title><style>body{font-family:Arial;padding:20px}</style></head><body>`;
+  html += `<h1>SASCO PALM - Day Summary</h1><table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse"><tr><th>Product</th><th>Total</th><th>Unconfirmed</th><th>Confirmed</th><th>Remaining</th></tr>`;
+  products.forEach((p,i)=> {
+    const unconfirmed = perPersonSales[i] ? ((perPersonSales[i]["Store Incharge"]||0)+(perPersonSales[i]["Cashier"]||0)) : 0;
+    html += `<tr><td>${p}</td><td>${totalQty[i]||0}</td><td>${unconfirmed}</td><td>${confirmed[i]||0}</td><td>${Math.max((totalQty[i]||0)-(confirmed[i]||0)-unconfirmed,0)}</td></tr>`;
+  });
+  html += `</table><h2>History</h2><ul>`;
+  history.slice().reverse().forEach(h => html += `<li>[${h.date}] ${h.person} ${h.action} ${h.qty} on ${h.product}${h.approved? ' ✅':''}</li>`);
+  html += `</ul></body></html>`;
+  w.document.write(html); w.document.close(); w.focus(); w.print();
+}
+
+/* -------------- INIT -------------- */
+function renderProductOptions(){
+  productSelect.innerHTML = "";
+  products.forEach((p,i)=>{
+    const opt = document.createElement("option");
+    opt.value = i; opt.textContent = p;
+    productSelect.appendChild(opt);
+  });
+  renderTiles();
+  renderHistory();
+}
+function openAdd(){ document.getElementById("addQty").focus(); }
+function openRemove(){ document.getElementById("removeQty").focus(); }
+function openSale(){ document.getElementById("saleQty").focus(); }
+function openConfirm(){ /* no-op */ }
+
+/* -------------- APP START -------------- */
+loadAll();
+renderProductOptions();
+filterTypeChanged(); // set filter UI
+// Note: appWrap remains hidden until master PIN is entered via the login card
+
+</script>
+</body>
+</html>
